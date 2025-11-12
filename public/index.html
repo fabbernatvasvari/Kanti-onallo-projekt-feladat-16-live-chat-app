@@ -1,47 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Chat App</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f3f3f3;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    button {
-      background: #4f46e5;
-      color: white;
-      border: none;
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #4338ca;
-    }
-  </style>
-</head>
-<body>
-  <button id="chatButton">💬 New Chat</button>
 
-  <script>
-    document.getElementById("chatButton").addEventListener("click", () => {
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .lightgreen {
+            background-color: rgb(93, 82, 192);
+        }
+
+        .forest-background {
+            background-image: url('../img/forest.jpg');
+            /* relative to public/index.html */
+            background-size: cover;
+            background-position: center;
+        }
+
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #4338ca;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="bg-blue-100 p-6 max-w-4xl mx-auto">
+        <div class="main-container m-10 p-10 lightgreen forest-background rounded-xl shadow-lg text-white">
+
+            <h1 class="text-3xl font-bold mb-4">Welcome</h1>
+            <p class="mb-4">You are not logged in.</p>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="chatButton">💬 New Chat</button>
+
+        </div>
+
+        <div id="chatArea" class="hidden mt-10 p-6 bg-white rounded-xl shadow-lg text-black">
+      <!-- Hidden initially -->
+    </div>
+    </main>
+
+
+    <script>
+        document.getElementById("chatButton").addEventListener("click", () => {
       fetch('/api/register', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
-          alert(`Your CHAT code is: ${data.chat}`);
+          loadNewChat(data.chat);
         })
         .catch(error => {
           console.error('Error:', error);
           alert('A "fetch api/register" error occurred while generating your CHAT code.');
         });
     });
-  </script>
+
+    // Function that displays the new chat div
+    function loadNewChat(chatCode) {
+      const chatArea = document.getElementById("chatArea");
+      chatArea.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">Chat Started ✅</h2>
+        <p>Your chat code: <span class="font-mono text-blue-700">${chatCode}</span></p>
+        <textarea class="w-full mt-4 p-2 border rounded" rows="5" placeholder="Type your message..."></textarea>
+        <button class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Send</button>
+      `;
+      chatArea.classList.remove("hidden");
+    }
+    </script>
+
 </body>
 </html>
