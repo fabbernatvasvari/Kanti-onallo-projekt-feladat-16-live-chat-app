@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat App</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f3f3f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #4338ca;
+    }
+  </style>
+</head>
+<body>
+  <button id="chatButton">💬 New Chat</button>
+
+  <script>
+    document.getElementById("chatButton").addEventListener("click", () => {
+      fetch('/api/register', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          alert(`Your CHAT code is: ${data.chat}`);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('A "fetch api/register" error occurred while generating your CHAT code.');
+        });
+    });
+  </script>
+</body>
+</html>

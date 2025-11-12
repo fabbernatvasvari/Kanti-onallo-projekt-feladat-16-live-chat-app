@@ -1,3 +1,32 @@
+/*
+16. Live Chat AlkalmazásA live chat alkalmazás célja, hogy lehetővé tegye a regisztrált felhasználók közötti valós idejű üzenetküldést. Az üzenetek azonnali megjelenítése a chat felületen, és az üzenetek közötti interakciók, válaszok dinamikus kezelésére lesz szükség. A kommunikáció a socketek segítségével valósul meg, így a felhasználók közötti üzenetek valós időben kerülnek továbbításra.  
+
+Végpontok:
+POST /api/register - Új felhasználó regisztrálása. A válasz tartalmazza a sikeres regisztráció után a felhasználói adatokat.
+POST /api/login - Felhasználó bejelentkezése. A válasz egy JWT token, amelyet a következő kérésekhez fel lehet használni.
+GET /api/users  - A regisztrált felhasználók listájának lekérése a bejelentkezett felhasználó számára, kivéve őt magát.
+POST /api/messages - Új üzenet küldése. A kérés a címzett felhasználó azonosítóját, az üzenet tartalmát és opcionálisan a parent_id-t tartalmazza (szálakhoz). 
+GET /api/messages  - A bejelentkezett felhasználó összes üzenetének lekérése (beérkezett és elküldött üzenetek). 
+GET /api/messages/conversation/:userId - Két felhasználó közötti beszélgetés lekérése. 
+GET /api/messages/thread/:id  - Egy üzenethez tartozó válaszok lekérése (thread nézet). 
+POST /api/messages/reply  - Egy üzenetre adott válasz küldése (thread jelleggel). 
+
+Adatbázis táblák:
+id, username, email, password_hash  
+messages(id, sender_id, recipient_id, content, parent_msg_id, created_at, is_read)
+
+Frontend:
+Bejelentkezés / Regisztráció oldal: Felhasználó regisztrálhat vagy bejelentkezhet.
+Bejelentkezés után a WebSocket kapcsolat automatikusan létrejön.
+Felhasználólista oldal: Az összes regisztrált felhasználó listája megjelenik.
+„Üzenet küldése” gomb minden felhasználó mellett.
+Chat felület: Az aktuális beszélgetés megjelenítése, minden üzenet kíséretében a feladó neve, időpont és tartalom.
+Az új üzenetek azonnal megjelennek, miután megérkeznek a WebSocket-en.
+Üzenetszál nézet: Egy üzenethez tartozó válaszok listázása.
+Válasz küldésének lehetősége egy gomb segítségével.
+Push értesítések: Ha egy új üzenet érkezik, a felhasználó értesítést kap (a WebSocket események segítségével).
+*/
+
 import express from "express";
 import nodemailer from "nodemailer";
 import randomstring from "randomstring";
@@ -32,7 +61,11 @@ const sendMail = async (email, chat) => {
 const chatCashe = {};
 const PORT = process.env.PORT || 3001;
 const app = express();
-app.use(express.json());
+app.use(express.static("public"));
+
+app.get("/", (req, res) => {
+  res.sendFile(process.cwd() + "/public/index.html");
+});
 
 app.post("/api/register", (req, res) => {
 	const { email } = req.body;
