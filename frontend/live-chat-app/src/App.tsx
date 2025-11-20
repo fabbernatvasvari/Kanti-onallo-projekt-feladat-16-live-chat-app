@@ -1,5 +1,9 @@
 import { useState } from "react";
-
+import { Routes, Route } from "react-router-dom";
+import ChatPage from "./pages/ChatPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import UserListPage from "./pages/UserListPage";
 export default function App() {
   const [chatCode, setChatCode] = useState<string | null>(null);
 
@@ -59,6 +63,12 @@ export default function App() {
           </div>
         )}
       </main>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/users" element={<UserListPage />} />
+        <Route path="/chat/:userId" element={<ChatPage />} />
+      </Routes>
     </>
   );
 }
