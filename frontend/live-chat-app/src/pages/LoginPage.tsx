@@ -2,12 +2,12 @@ import { useState } from "react";
 import { login } from "../api/auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = await login(email, password);
+    const token = await login(username, password);
     localStorage.setItem("token", token);
     window.location.href = "/users";
   }
@@ -19,9 +19,9 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="email"
-          placeholder="E-mail"
+          placeholder="Felhasználónév"
           className="border p-2 rounded"
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => setUsername(e.target.value)}
         />
         <input
           type="password"

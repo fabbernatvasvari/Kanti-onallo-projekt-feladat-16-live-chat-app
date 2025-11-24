@@ -20,9 +20,15 @@ export default function App() {
 
   return (
     <>
-      <div className="p-4 text-xl">
-        Valami ami megjelenik az oldalon
+      <div className="p-4 text-xl flex justify-center">
+     <h1>  Live Chat App</h1>
       </div>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/users" element={<UserListPage />} />
+        <Route path="/chat/:userId" element={<ChatPage />} />
+      </Routes>
       <main className="bg-blue-100 p-6 max-w-4xl mx-auto h-screen flex items-center justify-center">
         {/* Main box */}
         <div className="m-10 p-10 rounded-xl shadow-lg text-white"
@@ -63,12 +69,6 @@ export default function App() {
           </div>
         )}
       </main>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/users" element={<UserListPage />} />
-        <Route path="/chat/:userId" element={<ChatPage />} />
-      </Routes>
     </>
   );
 }
