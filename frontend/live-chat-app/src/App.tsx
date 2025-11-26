@@ -1,8 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, Users, LogOut, ArrowLeft, Reply, Bell } from 'lucide-react';
 
+// Types
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  password_hash?: string;
+}
+
+interface Message {
+  id: number;
+  sender_id: number;
+  recipient_id: number;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  parent_msg_id?: number;
+}
+
+interface ApiResponse<T> {
+  success?: boolean;
+  error?: string;
+  token?: string;
+  user?: User;
+  users?: User[];
+  messages?: Message[];
+  message?: Message;
+  replies?: Message[];
+}
+
+interface Database {
+  users: User[];
+  messages: Message[];
+}
+
 // Simulated database
-const db = {
+const db: Database = {
   users: [
     { id: 1, username: 'test', email: 'test@example.com', password_hash: '' },
     { id: 2, username: 'anna', email: 'anna@example.com', password_hash: btoa('anna123') },
@@ -14,14 +48,12 @@ const db = {
 
 // Simulated API and WebSocket
 class ChatAPI {
-  constructor() {
-    this.currentUser = null;
-    this.token = null;
-    this.listeners = new Set();
-    this.messageIdCounter = 1;
-  }
+  currentUser: User | null = null;
+  token: string | null = null;
+  listeners: Set<(message: Message) => void> = new Set();
+  messageIdCounter: number = 1;
 
-  register(username, email, password) {
+  register(username: string, email: string, password: string): Promise<ApiResponse<User>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (!username || !email) {
@@ -32,7 +64,7 @@ class ChatAPI {
         if (existingUser) {
           resolve({ error: 'A felhasználónév vagy email már létezik' });
         } else {
-          const user = {
+          const user: User = {
             id: db.users.length + 1,
             username,
             email,
@@ -45,7 +77,7 @@ class ChatAPI {
     });
   }
 
-  login(username, password) {
+  login(username: string, password: string): Promise<ApiResponse<User>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         const user = db.users.find(u => u.username === username);
@@ -60,13 +92,13 @@ class ChatAPI {
     });
   }
 
-  getUsers() {
+  getUsers(): Promise<ApiResponse<User[]>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (!this.currentUser) {
           resolve({ error: 'Nem vagy bejelentkezve' });
         } else {
-          const users = db.users.filter(u => u.id !== this.currentUser.id).map(u => ({
+          const users = db.users.filter(u => u.id !== this.currentUser!.id).map(u => ({
             id: u.id,
             username: u.username,
             email: u.email
@@ -77,13 +109,13 @@ class ChatAPI {
     });
   }
 
-  sendMessage(recipientId, content) {
+  sendMessage(recipientId: number, content: string): Promise<ApiResponse<Message>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (!this.currentUser) {
           resolve({ error: 'Nem vagy bejelentkezve' });
         } else {
-          const message = {
+          const message: Message = {
             id: this.messageIdCounter++,
             sender_id: this.currentUser.id,
             recipient_id: recipientId,
@@ -102,14 +134,14 @@ class ChatAPI {
     });
   }
 
-  getMessages() {
+  getMessages(): Promise<ApiResponse<Message[]>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (!this.currentUser) {
           resolve({ error: 'Nem vagy bejelentkezve' });
         } else {
           const messages = db.messages.filter(m => 
-            m.sender_id === this.currentUser.id || m.recipient_id === this.currentUser.id
+            m.sender_id === this.currentUser!.id || m.recipient_id === this.currentUser!.id
           );
           resolve({ success: true, messages });
         }
@@ -117,20 +149,20 @@ class ChatAPI {
     });
   }
 
-  getConversation(userId) {
+  getConversation(userId: number): Promise<ApiResponse<Message[]>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (!this.currentUser) {
           resolve({ error: 'Nem vagy bejelentkezve' });
         } else {
           const messages = db.messages.filter(m => 
-            (m.sender_id === this.currentUser.id && m.recipient_id === userId) ||
-            (m.sender_id === userId && m.recipient_id === this.currentUser.id)
-          ).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            (m.sender_id === this.currentUser!.id && m.recipient_id === userId) ||
+            (m.sender_id === userId && m.recipient_id === this.currentUser!.id)
+          ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
           
           // Mark messages as read
           messages.forEach(m => {
-            if (m.recipient_id === this.currentUser.id) {
+            if (m.recipient_id === this.currentUser!.id) {
               m.is_read = true;
             }
           });
@@ -141,30 +173,30 @@ class ChatAPI {
     });
   }
 
-  getThread(messageId) {
+  getThread(messageId: number): Promise<ApiResponse<Message[]>> {
     return new Promise((resolve) => {
       setTimeout(() => {
         const replies = db.messages.filter(m => m.parent_msg_id === messageId)
-          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         resolve({ success: true, replies });
       }, 200);
     });
   }
 
-  replyToMessage(messageId, recipientId, content) {
-    return this.sendMessage(recipientId, content, messageId);
+  replyToMessage(messageId: number, recipientId: number, content: string): Promise<ApiResponse<Message>> {
+    return this.sendMessage(recipientId, content);
   }
 
-  subscribeToMessages(callback) {
+  subscribeToMessages(callback: (message: Message) => void): () => void {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   }
 
-  broadcastMessage(message) {
+  broadcastMessage(message: Message): void {
     this.listeners.forEach(callback => callback(message));
   }
 
-  logout() {
+  logout(): void {
     this.currentUser = null;
     this.token = null;
   }
@@ -174,16 +206,16 @@ const api = new ChatAPI();
 
 // Main App Component
 export default function LiveChatApp() {
-  const [view, setView] = useState('login');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [view, setView] = useState<'login' | 'register' | 'users' | 'chat'>('login');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [notification, setNotification] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
-  const messagesEndRef = useRef(null);
-  const messageInputRef = useRef(null);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
 
   // WebSocket listener
   useEffect(() => {
@@ -215,14 +247,14 @@ export default function LiveChatApp() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const showNotification = (text) => {
+  const showNotification = (text: string) => {
     setNotification(text);
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleLogin = async (username, password) => {
+  const handleLogin = async (username: string, password: string) => {
     const result = await api.login(username, password);
-    if (result.success) {
+    if (result.success && result.user) {
       setCurrentUser(result.user);
       setView('users');
       loadUsers();
@@ -231,10 +263,10 @@ export default function LiveChatApp() {
     }
   };
 
-  const handleRegister = async (username, email, password) => {
+  const handleRegister = async (username: string, email: string, password: string) => {
     setValidationErrors({});
     
-    const errors = {};
+    const errors: Record<string, string> = {};
     if (!username.trim()) errors.username = 'A felhasználónév megadása kötelező';
     if (!email.trim()) errors.email = 'Az email megadása kötelező';
     
@@ -249,28 +281,28 @@ export default function LiveChatApp() {
       setView('login');
       setValidationErrors({});
     } else {
-      setValidationErrors({ general: result.error });
+      setValidationErrors({ general: result.error || 'Hiba történt' });
     }
   };
 
   const loadUsers = async () => {
     const result = await api.getUsers();
-    if (result.success) {
+    if (result.success && result.users) {
       setUsers(result.users);
     }
   };
 
-  const loadConversation = async (user) => {
+  const loadConversation = async (user: User) => {
     setSelectedUser(user);
     setView('chat');
     const result = await api.getConversation(user.id);
-    if (result.success) {
+    if (result.success && result.messages) {
       setMessages(result.messages);
     }
   };
 
   const sendMessage = async () => {
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !selectedUser) return;
 
     await api.sendMessage(selectedUser.id, messageInput);
     setMessageInput('');
@@ -279,10 +311,6 @@ export default function LiveChatApp() {
     setTimeout(() => {
       messageInputRef.current?.focus();
     }, 0);
-  };
-
-  const viewThread = async (messageId) => {
-    // Thread functionality removed
   };
 
   const handleLogout = () => {
@@ -430,7 +458,7 @@ export default function LiveChatApp() {
             <h1 className="text-xl font-bold">Felhasználók</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm">Bejelentkezve: {currentUser?.username}</span>
+            <span className="text-sm">Bejelentkezve mint: {currentUser?.username}</span>
             <button
               onClick={handleLogout}
               className="flex items-center bg-red-500 px-3 py-2 rounded hover:bg-red-600 transition"
@@ -476,12 +504,12 @@ export default function LiveChatApp() {
 
   // Chat View
   const ChatView = () => {
-    const getMessageSender = (msg) => {
-      if (msg.sender_id === currentUser.id) return currentUser;
-      return users.find(u => u.id === msg.sender_id) || selectedUser;
+    const getMessageSender = (msg: Message): User | undefined => {
+      if (msg.sender_id === currentUser?.id) return currentUser;
+      return users.find(u => u.id === msg.sender_id) || selectedUser || undefined;
     };
 
-    const getReplyPreview = (messageId) => {
+    const getReplyPreview = (messageId: number): string | null => {
       const original = messages.find(m => m.id === messageId);
       if (!original) return null;
       return original.content.substring(0, 50) + (original.content.length > 50 ? '...' : '');
@@ -497,7 +525,6 @@ export default function LiveChatApp() {
                   setView('users');
                   setSelectedUser(null);
                   setMessages([]);
-                  setReplyingTo(null);
                 }}
                 className="mr-4 hover:bg-blue-700 p-2 rounded transition"
               >
@@ -526,7 +553,7 @@ export default function LiveChatApp() {
               <div className="space-y-4">
                 {messages.filter(m => !m.parent_msg_id).map(msg => {
                   const sender = getMessageSender(msg);
-                  const isOwn = msg.sender_id === currentUser.id;
+                  const isOwn = msg.sender_id === currentUser?.id;
                   const hasReplies = messages.some(m => m.parent_msg_id === msg.id);
 
                   return (
@@ -544,23 +571,6 @@ export default function LiveChatApp() {
                           </div>
                         )}
                         <p className="text-sm break-words">{msg.content}</p>
-                        <div className="flex items-center justify-end space-x-2 mt-2">
-                          <button
-                            onClick={() => setReplyingTo(msg.id)}
-                            className={`text-xs ${isOwn ? 'text-blue-100 hover:text-white' : 'text-gray-500 hover:text-gray-700'} flex items-center`}
-                          >
-                            <Reply className="w-3 h-3 mr-1" />
-                            Válasz
-                          </button>
-                          {hasReplies && (
-                            <button
-                              onClick={() => viewThread(msg.id)}
-                              className={`text-xs ${isOwn ? 'text-blue-100 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                              Szál megtekintése
-                            </button>
-                          )}
-                        </div>
                       </div>
                     </div>
                   );
@@ -571,21 +581,9 @@ export default function LiveChatApp() {
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-4">
-            {replyingTo && (
-              <div className="mb-2 p-2 bg-blue-50 rounded flex items-center justify-between">
-                <span className="text-sm text-blue-700">
-                  Válasz: {getReplyPreview(replyingTo)}
-                </span>
-                <button
-                  onClick={() => setReplyingTo(null)}
-                  className="text-blue-700 hover:text-blue-900"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
             <div className="flex space-x-2">
               <input
+                ref={messageInputRef}
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
@@ -606,114 +604,12 @@ export default function LiveChatApp() {
     );
   };
 
-  // Thread View Modal
-  const ThreadViewModal = () => {
-    const originalMessage = messages.find(m => m.id === threadView);
-    const [replyInput, setReplyInput] = useState('');
-
-    const sendReply = async () => {
-      if (!replyInput.trim()) return;
-      const recipientId = originalMessage.sender_id === currentUser.id ? 
-        originalMessage.recipient_id : originalMessage.sender_id;
-      await api.replyToMessage(threadView, recipientId, replyInput);
-      setReplyInput('');
-      const result = await api.getThread(threadView);
-      if (result.success) {
-        setThreadMessages(result.replies);
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-          <div className="p-4 border-b flex items-center justify-between">
-            <h2 className="text-xl font-bold">Üzenet szál</h2>
-            <button
-              onClick={() => {
-                setThreadView(null);
-                setThreadMessages([]);
-              }}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              ✕
-            </button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {originalMessage && (
-              <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-600">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-blue-900">
-                    {getMessageSender(originalMessage)?.username}
-                  </span>
-                  <span className="text-xs text-blue-600">
-                    {new Date(originalMessage.created_at).toLocaleString('hu-HU')}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-800">{originalMessage.content}</p>
-              </div>
-            )}
-
-            {threadMessages.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                Még nincsenek válaszok
-              </div>
-            ) : (
-              threadMessages.map(msg => {
-                const sender = getMessageSender(msg);
-                const isOwn = msg.sender_id === currentUser.id;
-                return (
-                  <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-md ${isOwn ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-3 shadow`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold">{sender?.username}</span>
-                        <span className={`text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
-                          {new Date(msg.created_at).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-sm">{msg.content}</p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="p-4 border-t">
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={replyInput}
-                onChange={(e) => setReplyInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendReply()}
-                placeholder="Válasz írása..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={sendReply}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const getMessageSender = (msg) => {
-    if (msg.sender_id === currentUser.id) return currentUser;
-    return users.find(u => u.id === msg.sender_id) || selectedUser;
-  };
-
   return (
     <div className="relative">
       {view === 'login' && <LoginView />}
       {view === 'register' && <RegisterView />}
       {view === 'users' && <UsersView />}
       {view === 'chat' && <ChatView />}
-      {/* {threadView && <ThreadViewModal />} */}
       
       {notification && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 animate-pulse z-50">
