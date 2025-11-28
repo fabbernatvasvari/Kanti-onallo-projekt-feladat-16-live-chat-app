@@ -68,6 +68,11 @@ function loadDB() {
 
 loadDB();
 
+function resetMessages() {
+  db.messages = [];
+  saveDB();
+}
+
 // Simulated API and WebSocket
 class ChatAPI {
   currentUser: User | null = null;
@@ -484,13 +489,27 @@ export default function LiveChatApp() {
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm">Bejelentkezve mint: {currentUser?.username}</span>
+            
+            {/* Gondolom ide kéne rakni a ` reset messages ` gombot */}
+            <button
+              onClick={resetMessages}
+              className="flex items-center bg-yellow-500 px-3 py-2 rounded hover:bg-yellow-600 transition"
+            >
+              Összes chat törlése
+            </button>
+            
             <button
               onClick={handleLogout}
               className="flex items-center bg-red-500 px-3 py-2 rounded hover:bg-red-600 transition"
             >
+              
               <LogOut className="w-4 h-4 mr-1" />
               Kilépés
             </button>
+
+            
+
+
           </div>
         </div>
       </div>
