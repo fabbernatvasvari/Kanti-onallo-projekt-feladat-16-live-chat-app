@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Users, LogOut, ArrowLeft, Reply, Bell } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, MessageSquare, Users, LogOut, ArrowLeft, Bell } from 'lucide-react';
 
 // Types
 interface User {
@@ -78,7 +78,8 @@ class ChatAPI {
   currentUser: User | null = null;
   token: string | null = null;
   listeners: Set<(message: Message) => void> = new Set();
-  messageIdCounter: number = 1;
+  // messageIdCounter: number = 1;
+  messageIdCounter = Number(localStorage.getItem("msgId")) || 1; // either one of these might work
 
   register(username: string, email: string, password: string): Promise<ApiResponse<User>> {
     return new Promise((resolve) => {
@@ -152,6 +153,8 @@ class ChatAPI {
             created_at: new Date().toISOString(),
             is_read: false
           };
+          localStorage.setItem("msgId", this.messageIdCounter.toString());
+          console.log("This REALLY is the subscription callback. Listener fired🔥");
           db.messages.push(message);
           saveDB();
 
@@ -249,28 +252,30 @@ export default function LiveChatApp() {
 
   // WebSocket listener
   useEffect(() => {
-    if (currentUser) {
-      const unsubscribe = api.subscribeToMessages((message) => {
-        // Show notification for incoming messages
-        if (message.recipient_id === currentUser.id) {
-          const sender = users.find(u => u.id === message.sender_id);
-          showNotification(`Új üzenet ${sender?.username || 'Ismeretlen'} felhasználótól`);
-          
-          // Update messages if viewing the conversation
-          if (selectedUser && message.sender_id === selectedUser.id) {
-            setMessages(prev => [...prev, message]);
-          }
-        }
-        
-        // Update if we sent the message
-        if (message.sender_id === currentUser.id && selectedUser && message.recipient_id === selectedUser.id) {
+    if (!currentUser) return;
+
+    const unsubscribe = api.subscribeToMessages((message) => {
+      if (message.recipient_id === currentUser.id) {
+        const sender = users.find(u => u.id === message.sender_id);
+        showNotification(`Új üzenet ${sender?.username || 'Ismeretlen'} felhasználótól`);
+
+        if (selectedUser && message.sender_id === selectedUser.id) {
           setMessages(prev => [...prev, message]);
         }
-      });
+      }
 
-      return unsubscribe;
-    }
-  }, [currentUser, selectedUser, users]);
+      if (message.sender_id === currentUser.id &&
+          selectedUser &&
+          message.recipient_id === selectedUser.id) {
+        setMessages(prev => [...prev, message]);
+      }
+    });
+
+    return unsubscribe;
+
+  // ❗ only depend on currentUser
+  }, [currentUser]);
+
 
   // Auto-scroll to bottom
   useEffect(() => {
