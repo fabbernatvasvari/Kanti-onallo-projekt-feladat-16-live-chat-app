@@ -11,18 +11,29 @@ npm run dev
 vagy VSCode-ban indítás a `package.json`ban található play gombok megnyomásával
 vagy a `package.json`ban található parancsok kiadása a terminálban.
 ## Routes:
-http://localhost:3002/
+http://localhost:3001/
 
-http://localhost:3002/api/register
+http://localhost:3001/api/register
 
-http://localhost:3002/api/login
+http://localhost:3001/api/login
 
-http://localhost:3002/api/users
+http://localhost:3001/api/users
 
-http://localhost:3002/api/messages
+http://localhost:3001/api/messages
 
-http://localhost:3002/api/messages/conversation/:userId
+http://localhost:3001/api/messages/conversation/:userId
 
-http://localhost:3002/api/messages/thread/:id
+http://localhost:3001/api/messages/thread/:id
 
-http://localhost:3002/api/messages/reply
+http://localhost:3001/api/messages/reply
+
+## Api endpoints:
+
+POST /api/register
+POST /api/login
+GET /api/users
+POST /api/messages
+GET /api/messages
+GET /api/messages/conversation/:userId
+GET /api/messages/thread/:id
+POST /api/messages/reply

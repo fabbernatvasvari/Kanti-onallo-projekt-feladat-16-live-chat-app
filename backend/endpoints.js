@@ -30,8 +30,7 @@ Push értesítések: Ha egy új üzenet érkezik, a felhasználó értesítést 
 import express from "express";
 import nodemailer from "nodemailer";
 import randomstring from "randomstring";
-import "dotenv/config";
-import e from "express";
+import "dotenv/config"; // ez az email küldéshez kell
 
 function startServer(){
 
@@ -73,7 +72,11 @@ function startServer(){
 
 	const chatCashe = {};
 	const PORT = process.env.PORT || 3001;
-	const app = express();
+
+	// ---------------- API ROUTES ----------------
+	// ❌ don’t create a new server
+	const app = undefined; // placeholder for the passed express app instance
+
 	app.use(express.static("public"));
 
 	app.get("/", (req, res) => {
