@@ -3,12 +3,16 @@ import express from "express";
 
 // const cors = require("cors"); // this also does not work with import, because CJS module
 import cors from "cors";
+import startServer from "./endpoints.js"; // import FIRST
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ROUTES
+// mount routes created inside endpoints.js
+startServer(app);  
+
+// user routes
 // const userRoutes = require("./routes/users"); // this also does not work with import, because CJS module
 import userRoutes from "./routes/users.js";
 
