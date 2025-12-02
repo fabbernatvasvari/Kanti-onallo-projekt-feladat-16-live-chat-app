@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, Users, LogOut, ArrowLeft, Bell, Sun, Moon, Languages } from 'lucide-react';
-import en from './i18n_en';
-import hu from './i18n_hu';
+import en from './translations/i18n_en';
+import hu from './translations/i18n_hu';
 
 
 // Types
