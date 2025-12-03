@@ -144,7 +144,7 @@ function startServer(){
 	app.post( "/api/messages/reply" )
 
 	app.listen(PORT, () => {
-		console.log(`Runs on port ${PORT}`);
+		console.log(`Runs on port ${PORT - 1}, probably. 3001, 3002, etc. if that does not work`);
 	});
 }
 
