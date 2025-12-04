@@ -25,5 +25,8 @@
   },
   "devDependencies": {
     "swagger-autogen": "^2.23.7"
+  },
+  "directories": {
+    "test": "tests"
   }
 }
