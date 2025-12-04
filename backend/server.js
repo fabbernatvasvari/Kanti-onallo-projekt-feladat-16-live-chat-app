@@ -9,8 +9,11 @@ import registerRoutes from "./routes/register.js";
 import loginRoutes from "./routes/login.js";
 
 import startServer from "./endpoints.js"; // import FIRST
-
+import swaggerUi from 'swagger-ui-express'; // ujonnan hozzáadva
+import { readFile } from "fs/promises"; // ujonnan hozzáadva
+const swaggerDocument = JSON.parse(await readFile(new URL("./swagger-output.json", import.meta.url))); // ujonnan hozzáadva
 const app = express();
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument)); // ujonnan hozzáadva
 app.use(cors());
 app.use(express.json());
 

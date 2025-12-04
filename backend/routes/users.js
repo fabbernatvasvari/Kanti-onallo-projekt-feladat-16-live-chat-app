@@ -17,4 +17,11 @@ router.post("/", (req, res) => {
   res.json({ message: "User created", user: newUser });
 });
 
+// #swagger.tags = ['User']
+// #swagger.description = 'Védett végpont'
+// #swagger.security = [{ "BearerAuth": [] }]
+router.get('/profile', (req, res) => {
+    res.json({ msg: "Protected route" });
+});
+
 export default router;
